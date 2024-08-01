@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from typing import Optional
+import subprocess
 import os
 import yaml
 
@@ -11,7 +12,7 @@ def find_rsynk_base() -> Optional[str]:
             return cwd
         if cwd is '/':
             return None
-        cwd = os.dirname(cwd)
+        cwd = os.path.dirname(cwd)
 
 def main():
     print('Hello World!')
@@ -25,7 +26,17 @@ def main():
 
     with open(os.path.join(rsynk_dir,'rsynk.yaml')) as yaml_file:
         rsynk = yaml.load(yaml_file)
-        print(rsynk)
+
+    if rsynk is None:
+        print('Error: Failed to parse rsynk.yaml file.')
+        exit(1)
+
+    print(rsynk)
+
+    subprocess.run(['scp','-r',
+        rsynk_dir,
+        f'{rsynk.user}@{rsynk.host}:{rsynk.location}'
+    ])
 
     exit(0)
 
