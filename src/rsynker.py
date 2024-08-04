@@ -5,10 +5,13 @@ import os
 import yaml
 
 def find_rsynk_base() -> Optional[str]:
+    """Get the base directory to copy"""
     cwd = os.getcwd()
     while True:
-        potential_path = os.path.join(cwd,'.rsynk')
-        if os.path.isdir(potential_path):
+        potential_path = os.path.join(cwd,'.rsynk.yaml')
+        if os.path.isfile(potential_path):
+            # Remove trailing slash 
+            cwd = cwd [:-1]
             return cwd
         if cwd is '/':
             return None
@@ -22,9 +25,9 @@ def main():
         print("Error: Not under an rsynk")
         exit(1)
 
-    rsynk_dir = os.path.join(rsynk_base,'.rsynk')
+    rsynk_file = os.path.join(rsynk_base,'.rsynk.yaml')
 
-    with open(os.path.join(rsynk_dir,'rsynk.yaml')) as yaml_file:
+    with open(rsynk_file) as yaml_file:
         rsynk = yaml.load(yaml_file)
 
     if rsynk is None:
@@ -33,10 +36,22 @@ def main():
 
     print(rsynk)
 
-    subprocess.run(['scp','-r',
-        rsynk_dir,
-        f'{rsynk.user}@{rsynk.host}:{rsynk.location}'
-    ])
+    where = "{}@{}".format(rsynk['user'], rsynk['host'])
+    if where == '@':
+        where = rsynk['location']
+    else:
+        where = "{}:{}".format(where, rsynk['location'])
+    
+    cmd = [
+        'rsync',
+        '-r',
+        rsynk_base,
+        where
+    ]
+
+    print(" ".join(cmd))
+
+    # subprocess.run()
 
     exit(0)
 
